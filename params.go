@@ -66,5 +66,5 @@ func (p *Params) ToCypherMap() string {
 		sb.WriteString(fmt.Sprintf("%s,", p.params[k]))
 	}
 
-	return fmt.Sprintf("{%s}", strings.TrimSuffix(sb.String(), ","))
+	return "{" + strings.TrimSuffix(sb.String(), ",") + "}"
 }

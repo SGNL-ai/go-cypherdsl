@@ -287,6 +287,10 @@ const (
 	ContainsOperator             BooleanOperator = "CONTAINS"
 )
 
+func (b BooleanOperator) String() string {
+	return string(b)
+}
+
 // ConditionConfig is the configuration object for where conditions
 type ConditionConfig struct {
 	// Either ConditionOperator or ConditionFunction can be set, depending on whether an operator (e.g. '=') is
@@ -360,7 +364,9 @@ func (condition *ConditionConfig) ToString() (string, error) {
 	}
 
 	if condition.Label != "" {
-		sb.WriteString(fmt.Sprintf("%s:%s", condition.Name, condition.Label))
+		sb.WriteString(condition.Name)
+		sb.WriteRune(':')
+		sb.WriteString(condition.Label)
 		return sb.String(), nil
 	}
 
@@ -372,7 +378,10 @@ func (condition *ConditionConfig) ToString() (string, error) {
 	}
 
 	if condition.FieldManipulationFunction != "" {
-		sb.WriteString(fmt.Sprintf("%s(%s)", condition.FieldManipulationFunction, node))
+		sb.WriteString(condition.FieldManipulationFunction)
+		sb.WriteRune('(')
+		sb.WriteString(node)
+		sb.WriteRune(')')
 	} else {
 		sb.WriteString(node)
 	}
@@ -396,8 +405,8 @@ func (condition *ConditionConfig) ToString() (string, error) {
 	}
 
 	// Add ConditionOperator to query
-	sb.WriteString(fmt.Sprintf(" %s", condition.ConditionOperator))
-
+	sb.WriteRune(' ')
+	sb.WriteString(condition.ConditionOperator.String())
 	// Handle edge cases for specific ConditionOperator types
 	if condition.ConditionOperator == InOperator {
 		if condition.CheckSlice == nil {
@@ -423,16 +432,22 @@ func (condition *ConditionConfig) ToString() (string, error) {
 			q += fmt.Sprintf("%s,", str)
 		}
 
-		sb.WriteString(fmt.Sprintf(" %s]", strings.TrimSuffix(q, ",")))
+		sb.WriteRune(' ')
+		sb.WriteString(strings.TrimSuffix(q, ","))
+		sb.WriteRune(']')
 	} else {
 		if condition.CheckName != "" && condition.CheckField != "" {
-			sb.WriteString(fmt.Sprintf(" %s.%s", condition.CheckName, condition.CheckField))
+			sb.WriteRune(' ')
+			sb.WriteString(condition.CheckName)
+			sb.WriteRune('.')
+			sb.WriteString(condition.CheckField)
 		} else {
 			str, err := cypherizeInterface(condition.Check)
 			if err != nil {
 				return "", err
 			}
-			sb.WriteString(" " + str)
+			sb.WriteRune(' ')
+			sb.WriteString(str)
 		}
 	}
 
