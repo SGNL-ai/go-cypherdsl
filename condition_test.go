@@ -248,7 +248,7 @@ func TestNewCondition(t *testing.T) {
 func TestConditionBuilder(t *testing.T) {
 	req := require.New(t)
 
-	//(name.type = 1)
+	// name.type = 1
 	cypher, err := C(&ConditionConfig{
 		Name:              "name",
 		Field:             "type",
@@ -258,7 +258,17 @@ func TestConditionBuilder(t *testing.T) {
 	req.Nil(err)
 	req.EqualValues("name.type = 1", cypher.ToString())
 
-	//name.type = 1 AND exists(name.type)
+	// (name.type = 1)
+	cypher, err = NC(&ConditionConfig{
+		Name:              "name",
+		Field:             "type",
+		ConditionOperator: EqualToOperator,
+		Check:             1,
+	}).Build()
+	req.Nil(err)
+	req.EqualValues("(name.type = 1)", cypher.ToString())
+
+	// name.type = 1 AND exists(name.type)
 	cypher, err = C(&ConditionConfig{
 		Name:              "name",
 		Field:             "type",
@@ -272,7 +282,7 @@ func TestConditionBuilder(t *testing.T) {
 	req.Nil(err)
 	req.EqualValues("name.type = 1 AND exists(name.type)", cypher.ToString())
 
-	//name.type = 1 AND (name.otherType >= 1 OR name.str STARTS WITH 'test')
+	// name.type = 1 AND (name.otherType >= 1 OR name.str STARTS WITH 'test')
 	cypher, err = C(&ConditionConfig{
 		Name:              "name",
 		Field:             "type",
@@ -293,6 +303,28 @@ func TestConditionBuilder(t *testing.T) {
 		Build()
 	req.Nil(err)
 	req.EqualValues("name.type = 1 AND (name.otherType >= 1 OR name.str STARTS WITH 'test')", cypher.ToString())
+
+	// (name.type = 1) AND (name.otherType >= 1 OR name.str STARTS WITH 'test')
+	cypher, err = NC(&ConditionConfig{
+		Name:              "name",
+		Field:             "type",
+		ConditionOperator: EqualToOperator,
+		Check:             1,
+	}).AndNested(C(
+		&ConditionConfig{
+			Name:              "name",
+			Field:             "otherType",
+			ConditionOperator: GreaterThanOrEqualToOperator,
+			Check:             1,
+		}).Or(&ConditionConfig{
+		Name:              "name",
+		Field:             "str",
+		ConditionOperator: StartsWithOperator,
+		Check:             "test",
+	}).Build()).
+		Build()
+	req.Nil(err)
+	req.EqualValues("(name.type = 1) AND (name.otherType >= 1 OR name.str STARTS WITH 'test')", cypher.ToString())
 
 	//todo fail tests
 }

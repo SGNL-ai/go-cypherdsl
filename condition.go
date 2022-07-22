@@ -72,6 +72,38 @@ func C(condition *ConditionConfig) ConditionOperator {
 	return cond
 }
 
+// NC is used to start a nested condition chain provided with a ConditionConfig
+func NC(condition *ConditionConfig) ConditionOperator {
+	wq, err := NewCondition(condition)
+
+	if err != nil {
+		return &ConditionBuilder{
+			errors: []error{err},
+		}
+	}
+
+	cond := &ConditionBuilder{
+		Start:   nil,
+		errors:  nil,
+		Current: nil,
+	}
+
+	node := &operatorNode{
+		First: true,
+		Query: &conditionNode{
+			Condition: "(" + wq + ")",
+			Next:      nil,
+		},
+	}
+
+	err = cond.addNext(node)
+	if err != nil {
+		cond.addError(err)
+	}
+
+	return cond
+}
+
 //add an error to the condition chain
 func (c *ConditionBuilder) addError(e error) {
 	if c.errors == nil {
