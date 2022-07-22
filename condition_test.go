@@ -259,12 +259,12 @@ func TestConditionBuilder(t *testing.T) {
 	req.EqualValues("name.type = 1", cypher.ToString())
 
 	// (name.type = 1)
-	cypher, err = NC(&ConditionConfig{
+	cypher, err = NC(C(&ConditionConfig{
 		Name:              "name",
 		Field:             "type",
 		ConditionOperator: EqualToOperator,
 		Check:             1,
-	}).Build()
+	}).Build()).Build()
 	req.Nil(err)
 	req.EqualValues("(name.type = 1)", cypher.ToString())
 
@@ -305,12 +305,12 @@ func TestConditionBuilder(t *testing.T) {
 	req.EqualValues("name.type = 1 AND (name.otherType >= 1 OR name.str STARTS WITH 'test')", cypher.ToString())
 
 	// (name.type = 1) AND (name.otherType >= 1 OR name.str STARTS WITH 'test')
-	cypher, err = NC(&ConditionConfig{
+	cypher, err = NC(C(&ConditionConfig{
 		Name:              "name",
 		Field:             "type",
 		ConditionOperator: EqualToOperator,
 		Check:             1,
-	}).AndNested(C(
+	}).Build()).AndNested(C(
 		&ConditionConfig{
 			Name:              "name",
 			Field:             "otherType",

@@ -72,10 +72,9 @@ func C(condition *ConditionConfig) ConditionOperator {
 	return cond
 }
 
-// NC is used to start a nested condition chain provided with a ConditionConfig
-func NC(condition *ConditionConfig) ConditionOperator {
-	wq, err := NewCondition(condition)
-
+// NC is used to start a nested condition chain provided with (WhereQuery, err)
+// Usage: NC(conditionOperator.Build()) -> ConditionOperator
+func NC(query WhereQuery, err error) ConditionOperator {
 	if err != nil {
 		return &ConditionBuilder{
 			errors: []error{err},
@@ -91,7 +90,7 @@ func NC(condition *ConditionConfig) ConditionOperator {
 	node := &operatorNode{
 		First: true,
 		Query: &conditionNode{
-			Condition: "(" + wq + ")",
+			Condition: "(" + query + ")",
 			Next:      nil,
 		},
 	}
