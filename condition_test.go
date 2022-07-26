@@ -153,7 +153,7 @@ func TestNewCondition(t *testing.T) {
 	})
 	req.NotNil(err)
 
-	// check IN param string check i nil
+	// check IN non slice check is not nil
 	_, err = NewCondition(&ConditionConfig{
 		Name:              "adfa",
 		Field:             "dafsd",
