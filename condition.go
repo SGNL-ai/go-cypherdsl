@@ -31,6 +31,7 @@ package go_cypherdsl
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 )
 
@@ -409,32 +410,41 @@ func (condition *ConditionConfig) ToString() (string, error) {
 	sb.WriteString(condition.ConditionOperator.String())
 	// Handle edge cases for specific ConditionOperator types
 	if condition.ConditionOperator == InOperator {
-		if condition.CheckSlice == nil {
-			return "", errors.New("slice can not be nil")
-		}
-
-		if condition.Check != nil {
-			return "", errors.New("check should not be defined when using in operator")
-		}
-
-		if len(condition.CheckSlice) == 0 {
-			return "", errors.New("slice should not be nil")
-		}
-
-		q := "["
-
-		for _, val := range condition.CheckSlice {
-			str, err := cypherizeInterface(val)
+		if condition.Check != nil && (reflect.TypeOf(condition.Check) == reflect.TypeOf(ParamString(""))) {
+			str, err := cypherizeInterface(condition.Check)
 			if err != nil {
 				return "", err
 			}
+			sb.WriteRune(' ')
+			sb.WriteString(str)
+		} else {
+			if condition.CheckSlice == nil {
+				return "", errors.New("slice can not be nil")
+			}
 
-			q += fmt.Sprintf("%s,", str)
+			if condition.Check != nil {
+				return "", errors.New("check should not be defined when using in operator")
+			}
+
+			if len(condition.CheckSlice) == 0 {
+				return "", errors.New("slice should not be nil")
+			}
+
+			q := "["
+
+			for _, val := range condition.CheckSlice {
+				str, err := cypherizeInterface(val)
+				if err != nil {
+					return "", err
+				}
+
+				q += fmt.Sprintf("%s,", str)
+			}
+
+			sb.WriteRune(' ')
+			sb.WriteString(strings.TrimSuffix(q, ","))
+			sb.WriteRune(']')
 		}
-
-		sb.WriteRune(' ')
-		sb.WriteString(strings.TrimSuffix(q, ","))
-		sb.WriteRune(']')
 	} else {
 		if condition.CheckName != "" && condition.CheckField != "" {
 			sb.WriteRune(' ')
