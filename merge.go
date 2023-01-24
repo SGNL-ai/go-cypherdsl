@@ -58,7 +58,7 @@ func (m *MergeConfig) ToString() (string, error) {
 			return "", err
 		}
 
-		sb.WriteString(" ON MATCH SET")
+		sb.WriteString(" ON MATCH")
 		sb.WriteString(str)
 	}
 
@@ -154,7 +154,7 @@ func (m *MergeSetConfigWithMembers) ToString() (string, error) {
 			return "", err
 		}
 
-		sb.WriteRune(' ')
+		sb.WriteString(" SET ")
 		sb.WriteString(m.Name)
 		sb.WriteRune('.')
 		sb.WriteString(k)
