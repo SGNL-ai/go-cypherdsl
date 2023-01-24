@@ -46,7 +46,34 @@ func TestMergeSetConfig_ToString(t *testing.T) {
 	//error - target and target function defined
 	_, err = t6.ToString()
 	req.NotNil(err)
+}
 
+func TestMergeSetConfigWithMembers_ToString(t *testing.T) {
+	t1 := MergeSetConfigWithMembers{Members: map[string]interface{}{"key": "value"}}
+	t2 := MergeSetConfigWithMembers{Name: "test"}
+	t3 := MergeSetConfigWithMembers{Name: "test", Members: map[string]interface{}{}}
+	t4 := MergeSetConfigWithMembers{Name: "test", Members: map[string]interface{}{"key1": 1, "key2": "value2", "key3": ParamString("$key3")}}
+
+	req := require.New(t)
+	var err error
+	var cypher string
+
+	//error - name not defined
+	_, err = t1.ToString()
+	req.NotNil(err)
+
+	//error - members not defined
+	_, err = t2.ToString()
+	req.NotNil(err)
+
+	//error - members empty
+	_, err = t3.ToString()
+	req.NotNil(err)
+
+	//name members
+	cypher, err = t4.ToString()
+	req.Nil(err)
+	req.Contains(cypher, "test.key1 = 1", "test.key2 = 'value2'", "test.key3 = $key3")
 }
 
 func TestMergeConfig_ToString(t *testing.T) {
@@ -84,6 +111,14 @@ func TestMergeConfig_ToString(t *testing.T) {
 		Target: ParamString("$props"),
 	}}
 
+	t7 := MergeConfig{Path: "test", OnMatchWithMembers: &MergeSetConfigWithMembers{
+		Name:    "test",
+		Members: map[string]interface{}{"key1": 1, "key2": "value2", "key3": ParamString("$key3")},
+	}, OnCreate: &MergeSetConfig{
+		Name:   "test",
+		Target: ParamString("$props"),
+	}}
+
 	req := require.New(t)
 	var err error
 	var cypher string
@@ -116,4 +151,11 @@ func TestMergeConfig_ToString(t *testing.T) {
 	cypher, err = t6.ToString()
 	req.Nil(err)
 	req.EqualValues("test ON CREATE SET test = $props ON MATCH SET test = $props", cypher)
+
+	//merge with on create and on match with members
+	cypher, err = t7.ToString()
+	req.Nil(err)
+	req.Contains(cypher, "test ON CREATE SET test = $props")
+	req.Contains(cypher, " ON MATCH SET ", " test.key1 = 1", " test.key2 = 'value2'", " test.key3 = $key3")
+	req.Equal(98, len(cypher))
 }

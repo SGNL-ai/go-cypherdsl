@@ -15,6 +15,8 @@ type MergeConfig struct {
 
 	// what it does if its matching the node
 	OnMatch *MergeSetConfig
+
+	OnMatchWithMembers *MergeSetConfigWithMembers
 }
 
 func (m *MergeConfig) ToString() (string, error) {
@@ -36,6 +38,10 @@ func (m *MergeConfig) ToString() (string, error) {
 		sb.WriteString(str)
 	}
 
+	if m.OnMatch != nil && m.OnMatchWithMembers != nil {
+		return "", errors.New("OnMatch and OnMatchWithMembers can not coexist")
+	}
+
 	if m.OnMatch != nil {
 		str, err := m.OnMatch.ToString()
 		if err != nil {
@@ -43,6 +49,16 @@ func (m *MergeConfig) ToString() (string, error) {
 		}
 
 		sb.WriteString(" ON MATCH SET ")
+		sb.WriteString(str)
+	}
+
+	if m.OnMatchWithMembers != nil {
+		str, err := m.OnMatchWithMembers.ToString()
+		if err != nil {
+			return "", err
+		}
+
+		sb.WriteString(" ON MATCH SET")
 		sb.WriteString(str)
 	}
 
@@ -61,6 +77,14 @@ type MergeSetConfig struct {
 
 	// new value if its a function, do not include
 	TargetFunction *FunctionConfig
+}
+
+type MergeSetConfigWithMembers struct {
+	// variable name
+	Name string
+
+	// member variables of node
+	Members map[string]interface{}
 }
 
 func (m *MergeSetConfig) ToString() (string, error) {
@@ -110,5 +134,35 @@ func (m *MergeSetConfig) ToString() (string, error) {
 	}
 
 	sb.WriteString(str)
+	return sb.String(), nil
+}
+
+func (m *MergeSetConfigWithMembers) ToString() (string, error) {
+	var sb strings.Builder
+
+	if m.Name == "" {
+		return "", errors.New("name can not be empty")
+	}
+
+	if len(m.Members) == 0 {
+		return "", errors.New("members map can not be empty")
+	}
+
+	for k, v := range m.Members {
+		str, err := cypherizeInterface(v)
+		if err != nil {
+			return "", err
+		}
+
+		sb.WriteRune(' ')
+		sb.WriteString(m.Name)
+		sb.WriteRune('.')
+		sb.WriteString(k)
+		sb.WriteRune(' ')
+		sb.WriteString(EqualToOperator.String())
+		sb.WriteRune(' ')
+		sb.WriteString(str)
+	}
+
 	return sb.String(), nil
 }
