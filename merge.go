@@ -16,7 +16,8 @@ type MergeConfig struct {
 	// what it does if its matching the node
 	OnMatch *MergeSetConfig
 
-	OnMatchWithMembers *MergeSetConfigWithMembers
+	// set individual properties if its matching the node
+	OnMatchSetMembers *MultiMemberMergeSetConfig
 }
 
 func (m *MergeConfig) ToString() (string, error) {
@@ -38,7 +39,7 @@ func (m *MergeConfig) ToString() (string, error) {
 		sb.WriteString(str)
 	}
 
-	if m.OnMatch != nil && m.OnMatchWithMembers != nil {
+	if m.OnMatch != nil && m.OnMatchSetMembers != nil {
 		return "", errors.New("OnMatch and OnMatchWithMembers can not coexist")
 	}
 
@@ -52,13 +53,13 @@ func (m *MergeConfig) ToString() (string, error) {
 		sb.WriteString(str)
 	}
 
-	if m.OnMatchWithMembers != nil {
-		str, err := m.OnMatchWithMembers.ToString()
+	if m.OnMatchSetMembers != nil {
+		str, err := m.OnMatchSetMembers.ToString()
 		if err != nil {
 			return "", err
 		}
 
-		sb.WriteString(" ON MATCH")
+		sb.WriteString(" ON MATCH SET ")
 		sb.WriteString(str)
 	}
 
@@ -79,7 +80,7 @@ type MergeSetConfig struct {
 	TargetFunction *FunctionConfig
 }
 
-type MergeSetConfigWithMembers struct {
+type MultiMemberMergeSetConfig struct {
 	// variable name
 	Name string
 
@@ -137,7 +138,7 @@ func (m *MergeSetConfig) ToString() (string, error) {
 	return sb.String(), nil
 }
 
-func (m *MergeSetConfigWithMembers) ToString() (string, error) {
+func (m *MultiMemberMergeSetConfig) ToString() (string, error) {
 	var sb strings.Builder
 
 	if m.Name == "" {
@@ -148,13 +149,20 @@ func (m *MergeSetConfigWithMembers) ToString() (string, error) {
 		return "", errors.New("members map can not be empty")
 	}
 
+	insertComma := false
 	for k, v := range m.Members {
 		str, err := cypherizeInterface(v)
 		if err != nil {
 			return "", err
 		}
 
-		sb.WriteString(" SET ")
+		if insertComma {
+			sb.WriteRune(',')
+			sb.WriteRune(' ')
+		}
+
+		insertComma = true
+
 		sb.WriteString(m.Name)
 		sb.WriteRune('.')
 		sb.WriteString(k)

@@ -49,10 +49,10 @@ func TestMergeSetConfig_ToString(t *testing.T) {
 }
 
 func TestMergeSetConfigWithMembers_ToString(t *testing.T) {
-	t1 := MergeSetConfigWithMembers{Members: map[string]interface{}{"key": "value"}}
-	t2 := MergeSetConfigWithMembers{Name: "test"}
-	t3 := MergeSetConfigWithMembers{Name: "test", Members: map[string]interface{}{}}
-	t4 := MergeSetConfigWithMembers{Name: "test", Members: map[string]interface{}{"key1": 1, "key2": "value2", "key3": ParamString("$key3")}}
+	t1 := MultiMemberMergeSetConfig{Members: map[string]interface{}{"key": "value"}}
+	t2 := MultiMemberMergeSetConfig{Name: "test"}
+	t3 := MultiMemberMergeSetConfig{Name: "test", Members: map[string]interface{}{}}
+	t4 := MultiMemberMergeSetConfig{Name: "test", Members: map[string]interface{}{"key1": 1, "key2": "value2", "key3": ParamString("$value3")}}
 
 	req := require.New(t)
 	var err error
@@ -73,7 +73,7 @@ func TestMergeSetConfigWithMembers_ToString(t *testing.T) {
 	//name members
 	cypher, err = t4.ToString()
 	req.Nil(err)
-	req.Contains(cypher, " SET test.key1 = 1", " SET test.key2 = 'value2'", " SET test.key3 = $key3")
+	req.Contains(cypher, "test.key1 = 1", "test.key2 = 'value2'", "test.key3 = $value3")
 }
 
 func TestMergeConfig_ToString(t *testing.T) {
@@ -111,9 +111,9 @@ func TestMergeConfig_ToString(t *testing.T) {
 		Target: ParamString("$props"),
 	}}
 
-	t7 := MergeConfig{Path: "test", OnMatchWithMembers: &MergeSetConfigWithMembers{
+	t7 := MergeConfig{Path: "test", OnMatchSetMembers: &MultiMemberMergeSetConfig{
 		Name:    "test",
-		Members: map[string]interface{}{"key1": 1, "key2": "value2", "key3": ParamString("$key3")},
+		Members: map[string]interface{}{"key1": 1, "key2": "value2", "key3": ParamString("$value3")},
 	}, OnCreate: &MergeSetConfig{
 		Name:   "test",
 		Target: ParamString("$props"),
@@ -156,6 +156,6 @@ func TestMergeConfig_ToString(t *testing.T) {
 	cypher, err = t7.ToString()
 	req.Nil(err)
 	req.Contains(cypher, "test ON CREATE SET test = $props")
-	req.Contains(cypher, " ON MATCH SET ", " SET test.key1 = 1", " SET test.key2 = 'value2'", " SET test.key3 = $key3")
-	req.Equal(106, len(cypher))
+	req.Contains(cypher, " ON MATCH SET ", "test.key1 = 1", "test.key2 = 'value2'", "test.key3 = $value3")
+	req.Equal(102, len(cypher))
 }
