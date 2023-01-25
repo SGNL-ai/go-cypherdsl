@@ -73,7 +73,7 @@ func C(condition *ConditionConfig) ConditionOperator {
 	return cond
 }
 
-//add an error to the condition chain
+// add an error to the condition chain
 func (c *ConditionBuilder) addError(e error) {
 	if c.errors == nil {
 		c.errors = []error{e}
@@ -82,12 +82,12 @@ func (c *ConditionBuilder) addError(e error) {
 	}
 }
 
-//check if the builder has had any errors down the chain
+// check if the builder has had any errors down the chain
 func (c *ConditionBuilder) hasErrors() bool {
 	return c.errors != nil && len(c.errors) > 0
 }
 
-//add another node to the chain
+// add another node to the chain
 func (c *ConditionBuilder) addNext(node *operatorNode) error {
 	if node == nil {
 		return errors.New("node can not be nil")
@@ -280,6 +280,7 @@ const (
 	GreaterThanOrEqualToOperator BooleanOperator = ">="
 	EqualToOperator              BooleanOperator = "="  // TODO: Rename to `EqualityOperator` to match OC9 spec
 	NotEqualToOperator           BooleanOperator = "<>" // TODO: Rename to `InequalityOperator` to match OC9 spec
+	PlusEqualOperator            BooleanOperator = "+="
 	InOperator                   BooleanOperator = "IN"
 	IsOperator                   BooleanOperator = "IS"
 	RegexEqualToOperator         BooleanOperator = "=~"

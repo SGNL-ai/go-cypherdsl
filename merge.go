@@ -61,6 +61,10 @@ type MergeSetConfig struct {
 
 	// new value if its a function, do not include
 	TargetFunction *FunctionConfig
+
+	// Operator is the operator used in the SET clause. Must be "=" or "+=".
+	// If not set, defaults to "=".
+	Operator BooleanOperator
 }
 
 func (m *MergeSetConfig) ToString() (string, error) {
@@ -81,11 +85,26 @@ func (m *MergeSetConfig) ToString() (string, error) {
 	if m.Target != nil && (reflect.TypeOf(m.Target) == reflect.TypeOf(ParamString(""))) {
 		sb.WriteString(m.Name)
 		sb.WriteRune(' ')
-		sb.WriteString(EqualToOperator.String())
+
+		operator := m.Operator
+		if operator == "" {
+			operator = EqualToOperator
+		} else if operator != EqualToOperator && operator != PlusEqualOperator {
+			return "", errors.New("invalid SET operator")
+		}
+
+		sb.WriteString(operator.String())
 		sb.WriteRune(' ')
 	} else {
 		if m.Member == "" {
 			return "", errors.New("member can not be empty")
+		}
+
+		operator := m.Operator
+		if operator == "" {
+			operator = EqualToOperator
+		} else if operator != EqualToOperator {
+			return "", errors.New("invalid SET operator for member")
 		}
 
 		sb.WriteString(m.Name)

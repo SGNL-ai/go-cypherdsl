@@ -17,6 +17,13 @@ func TestMergeSetConfig_ToString(t *testing.T) {
 	t5 := MergeSetConfig{Name: "test", Member: "ttt"}
 	t6 := MergeSetConfig{Name: "test", Member: "ttt", TargetFunction: &FunctionConfig{Name: "test"}, Target: 1}
 
+	t7 := MergeSetConfig{Name: "test", Member: "ttt", TargetFunction: &FunctionConfig{Name: "test"}, Operator: EqualToOperator}
+	t8 := MergeSetConfig{Name: "test", Member: "ttt", TargetFunction: &FunctionConfig{Name: "test"}, Operator: PlusEqualOperator}
+
+	t9 := MergeSetConfig{Name: "test", Target: ParamString("$props"), Operator: EqualToOperator}
+	t10 := MergeSetConfig{Name: "test", Target: ParamString("$props"), Operator: PlusEqualOperator}
+	t11 := MergeSetConfig{Name: "test", Target: ParamString("$props"), Operator: ContainsOperator}
+
 	req := require.New(t)
 	var err error
 	var cypher string
@@ -47,6 +54,28 @@ func TestMergeSetConfig_ToString(t *testing.T) {
 	_, err = t6.ToString()
 	req.NotNil(err)
 
+	//name member target function operator
+	cypher, err = t7.ToString()
+	req.Nil(err)
+	req.EqualValues("test.ttt = test()", cypher)
+
+	//error - invalid operator defined
+	_, err = t8.ToString()
+	req.NotNil(err)
+
+	//name target operator
+	cypher, err = t9.ToString()
+	req.Nil(err)
+	req.EqualValues("test = $props", cypher)
+
+	//name target operator
+	cypher, err = t10.ToString()
+	req.Nil(err)
+	req.EqualValues("test += $props", cypher)
+
+	//error - invalid operator defined
+	_, err = t11.ToString()
+	req.NotNil(err)
 }
 
 func TestMergeConfig_ToString(t *testing.T) {
@@ -77,8 +106,9 @@ func TestMergeConfig_ToString(t *testing.T) {
 	t5 := MergeConfig{}
 
 	t6 := MergeConfig{Path: "test", OnMatch: &MergeSetConfig{
-		Name:   "test",
-		Target: ParamString("$props"),
+		Name:     "test",
+		Target:   ParamString("$props"),
+		Operator: PlusEqualOperator,
 	}, OnCreate: &MergeSetConfig{
 		Name:   "test",
 		Target: ParamString("$props"),
@@ -115,5 +145,5 @@ func TestMergeConfig_ToString(t *testing.T) {
 	//merge with on create and on match set to param string
 	cypher, err = t6.ToString()
 	req.Nil(err)
-	req.EqualValues("test ON CREATE SET test = $props ON MATCH SET test = $props", cypher)
+	req.EqualValues("test ON CREATE SET test = $props ON MATCH SET test += $props", cypher)
 }
