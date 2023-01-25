@@ -6,6 +6,13 @@ import (
 	"strings"
 )
 
+type MergeSetConfigType string
+
+const (
+	CREATE MergeSetConfigType = "CREATE"
+	MERGE  MergeSetConfigType = "MERGE"
+)
+
 type MergeConfig struct {
 	// the path its merging on
 	Path string
@@ -15,9 +22,6 @@ type MergeConfig struct {
 
 	// what it does if its matching the node
 	OnMatch *MergeSetConfig
-
-	// set individual properties if its matching the node
-	OnMatchSetMembers *MultiMemberMergeSetConfig
 }
 
 func (m *MergeConfig) ToString() (string, error) {
@@ -39,22 +43,8 @@ func (m *MergeConfig) ToString() (string, error) {
 		sb.WriteString(str)
 	}
 
-	if m.OnMatch != nil && m.OnMatchSetMembers != nil {
-		return "", errors.New("OnMatch and OnMatchWithMembers can not coexist")
-	}
-
 	if m.OnMatch != nil {
 		str, err := m.OnMatch.ToString()
-		if err != nil {
-			return "", err
-		}
-
-		sb.WriteString(" ON MATCH SET ")
-		sb.WriteString(str)
-	}
-
-	if m.OnMatchSetMembers != nil {
-		str, err := m.OnMatchSetMembers.ToString()
 		if err != nil {
 			return "", err
 		}
@@ -78,14 +68,8 @@ type MergeSetConfig struct {
 
 	// new value if its a function, do not include
 	TargetFunction *FunctionConfig
-}
 
-type MultiMemberMergeSetConfig struct {
-	// variable name
-	Name string
-
-	// member variables of node
-	Members map[string]interface{}
+	Type MergeSetConfigType
 }
 
 func (m *MergeSetConfig) ToString() (string, error) {
@@ -106,7 +90,13 @@ func (m *MergeSetConfig) ToString() (string, error) {
 	if m.Target != nil && (reflect.TypeOf(m.Target) == reflect.TypeOf(ParamString(""))) {
 		sb.WriteString(m.Name)
 		sb.WriteRune(' ')
-		sb.WriteString(EqualToOperator.String())
+
+		if m.Type == MERGE {
+			sb.WriteString(PlusEqualOperator.String())
+		} else {
+			sb.WriteString(EqualToOperator.String())
+		}
+
 		sb.WriteRune(' ')
 	} else {
 		if m.Member == "" {
@@ -135,42 +125,5 @@ func (m *MergeSetConfig) ToString() (string, error) {
 	}
 
 	sb.WriteString(str)
-	return sb.String(), nil
-}
-
-func (m *MultiMemberMergeSetConfig) ToString() (string, error) {
-	var sb strings.Builder
-
-	if m.Name == "" {
-		return "", errors.New("name can not be empty")
-	}
-
-	if len(m.Members) == 0 {
-		return "", errors.New("members map can not be empty")
-	}
-
-	insertComma := false
-	for k, v := range m.Members {
-		str, err := cypherizeInterface(v)
-		if err != nil {
-			return "", err
-		}
-
-		if insertComma {
-			sb.WriteRune(',')
-			sb.WriteRune(' ')
-		}
-
-		insertComma = true
-
-		sb.WriteString(m.Name)
-		sb.WriteRune('.')
-		sb.WriteString(k)
-		sb.WriteRune(' ')
-		sb.WriteString(EqualToOperator.String())
-		sb.WriteRune(' ')
-		sb.WriteString(str)
-	}
-
 	return sb.String(), nil
 }
